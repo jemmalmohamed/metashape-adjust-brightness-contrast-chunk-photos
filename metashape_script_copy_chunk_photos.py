@@ -139,7 +139,7 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
                 Metashape.app.messageBox('error')
 
         print("Script finished!")
-        # self.close()
+        Metashape.app.messageBox('copy successful !')
         return True
 
 
