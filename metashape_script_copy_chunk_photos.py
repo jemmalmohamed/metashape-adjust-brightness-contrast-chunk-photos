@@ -4,6 +4,7 @@ from PySide2 import QtGui, QtCore, QtWidgets
 import datetime
 import shapefile
 import os
+import shutil
 
 
 # Checking compatibility
@@ -15,7 +16,7 @@ if found_major_version != compatible_major_version:
 
 
 class CopyChunkPhotosDlg(QtWidgets.QDialog):
-
+    path = ''
     def __init__(self, parent):
 
         QtWidgets.QDialog.__init__(self, parent)
@@ -25,16 +26,21 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.resize(250, 150)
         self.label_chunk = QtWidgets.QLabel('Chunk : ')
         self.label_chunk.resize(100, 23)
+
+        self.label_number_photos = QtWidgets.QLabel('Total Photos : ')
+
         self.label_folder = QtWidgets.QLabel('Select folder  : ')
         self.label_folder.resize(200, 23)
         self.chunksBox = QtWidgets.QComboBox()
         self.chunksBox.resize(200, 23)
 
+        self.path_label = QtWidgets.QLabel('Path :')
+
         doc = Metashape.app.document
         chunks = doc.chunks
-        print(chunks)
+
         for chunk in chunks:
-            self.chunksBox.addItem(chunk.label)
+            self.chunksBox.addItem(chunk.label, chunk.key)
 
         self.btnAdd = QtWidgets.QPushButton("Select...")
         self.btnAdd.setFixedSize(150, 23)
@@ -49,11 +55,14 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
 
         layout.addWidget(self.label_chunk, 1, 1)
         layout.addWidget(self.chunksBox, 1, 2)
+
         layout.addWidget(self.label_folder, 3, 1)
         layout.addWidget(self.btnAdd, 3, 2)
 
-        layout.addWidget(self.btnP1, 4, 1)
-        layout.addWidget(self.btnQuit, 4, 2)
+        layout.addWidget(self.path_label, 4, 1)
+
+        layout.addWidget(self.btnP1, 5, 1)
+        layout.addWidget(self.btnQuit, 5, 2)
 
         self.setLayout(layout)
 
@@ -68,6 +77,7 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         QtCore.QObject.connect(self.btnQuit, QtCore.SIGNAL(
             "clicked()"), self, QtCore.SLOT("reject()"))
 
+        self.btnP1.setEnabled(False)
         self.exec()
 
     def selectFolder(self):
@@ -75,69 +85,61 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         directoryPath = QtWidgets.QFileDialog.getExistingDirectory(
             self, "Select Directory")
         dossier = directoryPath.split('/')[-1]
+        path = 'path : {}'.format(directoryPath)
+        self.path_label.setText(path)
+        self.btnP1.setEnabled(True)
+        self.path = directoryPath
 
-    def toggleChkRemove(self, state):
+    def get_paths(self, chunk):
+        paths = []
+        for c in chunk.cameras:
 
-        if state > 0:
-            self.chkRemove.setEnabled(True)
-        else:
-            self.chkRemove.setEnabled(False)
-
-    def add_new_chunk(self, images, nb):
-        doc = Metashape.app.document
-        new_chunk = doc.addChunk()
-        new_chunk.label = 'flight ' + str(nb)
-        new_chunk.addPhotos(images)
-        return new_chunk
+            path = c.photo.path
+            paths.append(path)
+        return paths
 
     def copyChnukPhotos(self):
+
         print("Import Copy Photos Script started...")
+        paths = []
+        commun = []
+        doc = Metashape.app.document
+        chunks = doc.chunks
 
-        # date_previous = chunk.cameras[0].photo.meta['Exif/DateTime']
-        # date_previous = datetime.datetime.strptime(
-        #     date_previous, '%Y:%m:%d %H:%M:%S')
-        # image_list_by_flight = []
+        chunk_key = self.chunksBox.currentData()
+        chunk = doc.findChunk(chunk_key)
 
-        # for c in chunk.C:
+        paths = self.get_paths(chunk)
 
-        #     date_current = c.photo.meta['Exif/DateTime']
-        #     date_current = datetime.datetime.strptime(
-        #         date_current, '%Y:%m:%d %H:%M:%S')
+        commun = os.path.commonpath(paths)
+        commun_without_drive = os.path.splitdrive(commun)[1]
+        commun_without_drive = commun_without_drive.replace('\\', '/')
+        print(commun_without_drive)
+        for c in chunk.cameras:
 
-        #     sec = (date_current-date_previous).total_seconds()
+            source = c.photo.path
+            destination = self.path
 
-        #     if(sec < time_between_photos):
-        #         image_list_by_flight.append(c.photo.path)
-        #         if c == sorted_cameras[-1]:
-        #             print('last flight')
-        #             i = i+1
-        #             print('Flight {} : {} Photos'.format(
-        #                 i, len(image_list_by_flight)))
-        #             new_chunk = self.add_new_chunk(image_list_by_flight, i)
-        #             list_of_new_chunk.append(new_chunk)
-        #             list_of_keys_new_chunk.append(new_chunk.key)
+            path_without_drive = os.path.splitdrive(source)[1]
+            subfolder = os.path.splitext(path_without_drive)[0]
+            path_to_photo = os.path.split(path_without_drive)[0]
 
-        #     else:
-        #         i = i + 1
-        #         print('Flight {} : {} Photos'.format(
-        #             i, len(image_list_by_flight)))
-        #         new_chunk = self.add_new_chunk(image_list_by_flight, i)
-        #         list_of_new_chunk.append(new_chunk)
-        #         list_of_keys_new_chunk.append(new_chunk.key)
-        #         image_list_by_flight = []
-        #         image_list_by_flight.append(c.photo.path)
+            folders = path_to_photo.split('/')
 
-        #     date_previous = date_current
+            path_dist = destination + path_to_photo
 
-        # if self.chkMerge.isChecked():
-        #     print('merging flights ....')
-        #     doc.mergeChunks(chunks=list_of_keys_new_chunk)
+            path_dist = path_dist.replace(commun_without_drive, '')
 
-        # if self.chkRemove.isChecked():
-        #     print('Flights chunks removing...')
-        #     doc.remove(list_of_new_chunk)
+            try:
+                if not os.path.exists(path_dist):
+                    os.makedirs(path_dist)
+
+                shutil.copy2(source, path_dist)
+            except RuntimeError:
+                Metashape.app.messageBox('error')
+
         print("Script finished!")
-        self.close()
+        # self.close()
         return True
 
 
