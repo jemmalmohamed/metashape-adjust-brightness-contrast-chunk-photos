@@ -35,7 +35,7 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.setWindowTitle(
             "ADJUST PHOTOS BRIGHTNESS , CMG (MAROC)")
 
-        self.resize(1100, 800)
+        self.resize(1100, 850)
         self.adjustSize()
 
         self.label_chunk = QtWidgets.QLabel('Chunk : ')
@@ -57,10 +57,13 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.scrollArea.setBackgroundRole(QPalette.Dark)
         self.scrollArea.setWidget(self.imageLabel)
         self.scrollArea.setParent(self)
+        self.scrollArea.setGeometry(100, 150, 900, 600)
 
         # self.scrollArea.setVisible(True)
         # self.set(self.scrollArea)
 
+        self.zoomInAct = QtWidgets.QAction("Zoom &In (25%)", self, shortcut="Ctrl++",
+                                           enabled=False, triggered=self.zoomIn)
         self.createActions()
         # self.createMenus()
 
@@ -73,7 +76,7 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         # self.imageLabel.setGeometry(100, 150, 900, 600)
         self.scaleFactor = 1.0
 
-        self.printAct.setEnabled(True)
+        # self.printAct.setEnabled(True)
         self.fitToWindowAct.setEnabled(True)
         self.updateActions()
 
@@ -116,6 +119,12 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         for chunk in chunks:
             self.chunksBox.addItem(chunk.label, chunk.key)
 
+        self.btnZoomIn = QtWidgets.QPushButton("+")
+        self.btnZoomIn.setFixedSize(23, 23)
+
+        self.btnZoomOut = QtWidgets.QPushButton("-")
+        self.btnZoomOut.setFixedSize(23, 23)
+
         self.btnAdd = QtWidgets.QPushButton("Select...")
         self.btnAdd.setFixedSize(150, 23)
 
@@ -144,13 +153,18 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
 
         layout.addWidget(self.space, 6, 1)
 
-        layout.addWidget(self.btnP1, 7, 1)
-        layout.addWidget(self.btnQuit, 7, 2)
+        layout.addWidget(self.btnZoomIn, 7, 1)
+        layout.addWidget(self.btnZoomOut, 7, 2)
+
+        layout.addWidget(self.btnP1, 8, 1)
+        layout.addWidget(self.btnQuit, 8, 2)
 
         self.setLayout(layout)
 
         def proc_copy(): return self.copyChnukPhotos()
         def selectFolder(): return self.selectFolder()
+        def zoomIn(): return self.zoomIn()
+        def zoomOut(): return self.zoomOut()
 
         QtCore.QObject.connect(
             self.btnAdd, QtCore.SIGNAL("clicked()"), selectFolder)
@@ -159,6 +173,12 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
 
         QtCore.QObject.connect(self.btnQuit, QtCore.SIGNAL(
             "clicked()"), self, QtCore.SLOT("reject()"))
+
+        QtCore.QObject.connect(
+            self.btnZoomIn, QtCore.SIGNAL("clicked()"),  zoomIn)
+
+        QtCore.QObject.connect(
+            self.btnZoomOut, QtCore.SIGNAL("clicked()"),  zoomOut)
 
         self.btnP1.setEnabled(False)
         self.exec()
@@ -214,17 +234,17 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.updateActions()
 
     def createActions(self):
-        self.openAct = QAction("&Open...", self, shortcut="Ctrl+O",
-                               triggered=self.open)
+        # self.openAct = QAction("&Open...", self, shortcut="Ctrl+O",
+        #                        triggered=self.open)
 
-        self.printAct = QAction("&Print...", self, shortcut="Ctrl+P",
-                                enabled=False, triggered=self.print_)
+        # self.printAct = QAction("&Print...", self, shortcut="Ctrl+P",
+        #                         enabled=False, triggered=self.print_)
 
-        self.exitAct = QAction("E&xit", self, shortcut="Ctrl+Q",
-                               triggered=self.close)
+        # self.exitAct = QAction("E&xit", self, shortcut="Ctrl+Q",
+        #                        triggered=self.close)
 
-        self.zoomInAct = QAction("Zoom &In (25%)", self, shortcut="Ctrl++",
-                                 enabled=False, triggered=self.zoomIn)
+        self.zoomInAct = QtWidgets.QAction("Zoom &In (25%)", self, shortcut="Ctrl++",
+                                           enabled=False, triggered=self.zoomIn)
 
         self.zoomOutAct = QAction("Zoom &Out (25%)", self, shortcut="Ctrl+-",
                                   enabled=False, triggered=self.zoomOut)
