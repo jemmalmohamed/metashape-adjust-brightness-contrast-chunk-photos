@@ -40,12 +40,11 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.adjustSize()
         # get chunks
 
-        self.createGridLayout()
-        vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.groupBox)
-
         doc = Metashape.app.document
         chunks = doc.chunks
+
+        self.label_chunk = QtWidgets.QLabel('Chunk : ')
+        self.label_chunk.resize(100, 23)
 
         self.chunksBox = QtWidgets.QComboBox()
         self.chunksBox.resize(200, 23)
@@ -77,7 +76,7 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.chkCreateChunk = QtWidgets.QCheckBox()
 
         # image viewer
-        self.printer = QtPrintSupport.QPrinter
+        # self.printer = QtPrintSupport.QPrinter
         self.scaleFactor = 0.0
 
         self.imageLabel = QtWidgets.QLabel(self)
@@ -97,7 +96,7 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
 
         # self.zoomInAct = QtWidgets.QAction("Zoom &In (25%)", self, shortcut="Ctrl++",
         #                                    enabled=False, triggered=self.zoomIn)
-        self.createActions()
+        # self.createActions()
         # self.createMenus()
         self.chunksBox.currentIndexChanged.connect(self.changeChunk)
         # self.changeChunk(chunks)
@@ -108,11 +107,11 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.scaleFactor = 1.0
 
         # self.printAct.setEnabled(True)
-        self.fitToWindowAct.setEnabled(True)
-        self.updateActions()
+        # self.fitToWindowAct.setEnabled(True)
+        # self.updateActions()
 
-        if not self.fitToWindowAct.isChecked():
-            self.imageLabel.adjustSize()
+        # if not self.fitToWindowAct.isChecked():
+        #     self.imageLabel.adjustSize()
 
         self.btnZoomIn = QtWidgets.QPushButton("+")
         self.btnZoomIn.setFixedSize(23, 23)
@@ -129,31 +128,32 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.btnP1 = QtWidgets.QPushButton("OK")
         self.btnP1.setFixedSize(150, 23)
 
-        # layout = QtWidgets.QGridLayout()  # creating layout
+        layout = QtWidgets.QGridLayout()  # creating layout
 
-        # layout.addWidget(self.chunksBox, 1, 2)
+        layout.addWidget(self.label_chunk, 1, 1)
+        layout.addWidget(self.chunksBox, 1, 2)
 
-        # layout.addWidget(self.label_brightness, 2, 1)
-        # layout.addWidget(self.brightness, 2, 2)
+        layout.addWidget(self.label_brightness, 2, 1)
+        layout.addWidget(self.brightness, 2, 2)
 
-        # layout.addWidget(self.label_contrast, 3, 1)
-        # layout.addWidget(self.contrast, 3, 2)
+        layout.addWidget(self.label_contrast, 3, 1)
+        layout.addWidget(self.contrast, 3, 2)
 
-        # layout.addWidget(self.label_folder, 4, 1)
-        # layout.addWidget(self.btnAdd, 4, 2)
+        layout.addWidget(self.label_folder, 4, 1)
+        layout.addWidget(self.btnAdd, 4, 2)
 
-        # layout.addWidget(self.chunk_create_label, 5, 1)
-        # layout.addWidget(self.chkCreateChunk, 5, 2)
+        layout.addWidget(self.chunk_create_label, 5, 1)
+        layout.addWidget(self.chkCreateChunk, 5, 2)
 
-        # layout.addWidget(self.space, 6, 1)
+        layout.addWidget(self.space, 6, 1)
 
-        # layout.addWidget(self.btnZoomIn, 7, 1)
-        # layout.addWidget(self.btnZoomOut, 7, 2)
+        layout.addWidget(self.btnZoomIn, 7, 1)
+        layout.addWidget(self.btnZoomOut, 7, 2)
 
-        # layout.addWidget(self.btnP1, 8, 1)
-        # layout.addWidget(self.btnQuit, 8, 2)
+        layout.addWidget(self.btnP1, 8, 1)
+        layout.addWidget(self.btnQuit, 8, 2)
 
-        # self.setLayout(layout)
+        self.setLayout(layout)
 
         def proc_copy(): return self.copyChnukPhotos()
         def selectFolder(): return self.selectFolder()
@@ -178,6 +178,18 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.btnP1.setEnabled(False)
         self.exec()
 
+    # def print_(self):
+    #     dialog = QPrintDialog(self.printer, self)
+    #     if dialog.exec_():
+    #         painter = QPainter(self.printer)
+    #         rect = painter.viewport()
+    #         size = self.imageLabel.pixmap().size()
+    #         size.scale(rect.size(), Qt.KeepAspectRatio)
+    #         painter.setViewport(rect.x(), rect.y(),
+    #                             size.width(), size.height())
+    #         painter.setWindow(self.imageLabel.pixmap().rect())
+    #         painter.drawPixmap(0, 0, self.imageLabel.pixmap())
+
     def zoomIn(self):
         self.scaleImage(1.25)
 
@@ -188,10 +200,10 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.imageLabel.adjustSize()
         self.scaleFactor = 1.0
 
-    def updateActions(self):
+    # def updateActions(self):
         # self.zoomInAct.setEnabled(not self.fitToWindowAct.isChecked())
         # self.zoomOutAct.setEnabled(not self.fitToWindowAct.isChecked())
-        self.normalSizeAct.setEnabled(not self.fitToWindowAct.isChecked())
+        # self.normalSizeAct.setEnabled(not self.fitToWindowAct.isChecked())
 
     def scaleImage(self, factor):
         self.scaleFactor *= factor
@@ -201,22 +213,22 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.adjustScrollBar(self.scrollArea.horizontalScrollBar(), factor)
         self.adjustScrollBar(self.scrollArea.verticalScrollBar(), factor)
 
-        self.zoomInAct.setEnabled(self.scaleFactor < 3.0)
-        self.zoomOutAct.setEnabled(self.scaleFactor > 0.333)
+        # self.zoomInAct.setEnabled(self.scaleFactor < 3.0)
+        # self.zoomOutAct.setEnabled(self.scaleFactor > 0.333)
 
     def adjustScrollBar(self, scrollBar, factor):
         scrollBar.setValue(int(factor * scrollBar.value()
                                + ((factor - 1) * scrollBar.pageStep()/2)))
 
-    def fitToWindow(self):
-        fitToWindow = self.fitToWindowAct.isChecked()
-        self.scrollArea.setWidgetResizable(fitToWindow)
-        if not fitToWindow:
-            self.normalSize()
+    # def fitToWindow(self):
+    #     fitToWindow = self.fitToWindowAct.isChecked()
+    #     self.scrollArea.setWidgetResizable(fitToWindow)
+    #     if not fitToWindow:
+    #         self.normalSize()
 
-        self.updateActions()
+        # self.updateActions()
 
-    def createActions(self):
+    # def createActions(self):
         # self.openAct = QAction("&Open...", self, shortcut="Ctrl+O",
         #                        triggered=self.open)
 
@@ -232,11 +244,11 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         # self.zoomOutAct = QAction("Zoom &Out (25%)", self, shortcut="Ctrl+-",
         #                           enabled=False, triggered=self.zoomOut)
 
-        self.normalSizeAct = QAction("&Normal Size", self, shortcut="Ctrl+S",
-                                     enabled=False, triggered=self.normalSize)
+        # self.normalSizeAct = QAction("&Normal Size", self, shortcut="Ctrl+S",
+        #                              enabled=False, triggered=self.normalSize)
 
-        self.fitToWindowAct = QAction("&Fit to Window", self, enabled=False,
-                                      checkable=True, shortcut="Ctrl+F", triggered=self.fitToWindow)
+        # self.fitToWindowAct = QAction("&Fit to Window", self, enabled=False,
+        #                               checkable=True, shortcut="Ctrl+F", triggered=self.fitToWindow)
 
         # self.aboutAct = QAction("&About", self, triggered=self.about)
 
@@ -276,17 +288,6 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         return exif
 
     print('--------------------------------')
-
-    def createGridLayout(self):
-        self.groupBox = QtWidgets.QGroupBox('Params')
-
-        gridLayout = QtWidgets.QGridLayout()
-
-        self.label_chunk = QtWidgets.QLabel('Chunk : ')
-        self.label_chunk.resize(100, 23)
-        gridLayout.addWidget(self.label_chunk, 1, 1)
-
-        self.groupBox.setLayout(gridLayout)
 
     def changeChunk(self, chunks):
         chunk_key = self.chunksBox.currentData()
