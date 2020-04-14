@@ -28,6 +28,7 @@ if found_major_version != compatible_major_version:
 
 class CopyChunkPhotosDlg(QtWidgets.QDialog):
     path = ''
+    image = Image
     def __init__(self, parent):
 
         QtWidgets.QDialog.__init__(self, parent)
@@ -37,6 +38,10 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
 
         self.resize(1100, 850)
         self.adjustSize()
+        # get chunks
+
+        doc = Metashape.app.document
+        chunks = doc.chunks
 
         self.label_chunk = QtWidgets.QLabel('Chunk : ')
         self.label_chunk.resize(100, 23)
@@ -44,51 +49,8 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.chunksBox = QtWidgets.QComboBox()
         self.chunksBox.resize(200, 23)
 
-        self.printer = QtPrintSupport.QPrinter
-        self.scaleFactor = 0.0
-
-        self.imageLabel = QtWidgets.QLabel(self)
-        self.imageLabel.setBackgroundRole(QtGui.QPalette.Base)
-        self.imageLabel.setSizePolicy(
-            QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
-        self.imageLabel.setScaledContents(True)
-
-        self.scrollArea = QScrollArea()
-        self.scrollArea.setBackgroundRole(QPalette.Dark)
-        self.scrollArea.setWidget(self.imageLabel)
-        self.scrollArea.setParent(self)
-        self.scrollArea.setGeometry(100, 150, 900, 600)
-
-        # self.scrollArea.setVisible(True)
-        # self.set(self.scrollArea)
-
-        self.zoomInAct = QtWidgets.QAction("Zoom &In (25%)", self, shortcut="Ctrl++",
-                                           enabled=False, triggered=self.zoomIn)
-        self.createActions()
-        # self.createMenus()
-
-        # self.setWindowTitle("Image Viewer")
-        # self.resize(500, 400)
-
-        path = "D:/copy/1/dji_0021"
-
-        self.imageLabel.setPixmap(QtGui.QPixmap(path))
-        # self.imageLabel.setGeometry(100, 150, 900, 600)
-        self.scaleFactor = 1.0
-
-        # self.printAct.setEnabled(True)
-        self.fitToWindowAct.setEnabled(True)
-        self.updateActions()
-
-        if not self.fitToWindowAct.isChecked():
-            self.imageLabel.adjustSize()
-
-        # self.photo = QtWidgets.QLabel(self)
-        # self.photo.setPixmap(QtGui.QPixmap(path).scaled(900, 600,
-        #                                                 QtCore.Qt.KeepAspectRatio,
-        #                                                 QtCore.Qt.SmoothTransformation))
-
-        #   self.photo.setGeometry(100, 150, 900, 600)
+        for chunk in chunks:
+            self.chunksBox.addItem(chunk.label, chunk.key)
 
         self.label_brightness = QtWidgets.QLabel('Image brightness (%): ')
         self.brightness = QtWidgets.QSpinBox()
@@ -113,11 +75,43 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
 
         self.chkCreateChunk = QtWidgets.QCheckBox()
 
-        doc = Metashape.app.document
-        chunks = doc.chunks
+        # image viewer
+        self.printer = QtPrintSupport.QPrinter
+        self.scaleFactor = 0.0
 
-        for chunk in chunks:
-            self.chunksBox.addItem(chunk.label, chunk.key)
+        self.imageLabel = QtWidgets.QLabel(self)
+        self.imageLabel.setBackgroundRole(QtGui.QPalette.Base)
+        self.imageLabel.setSizePolicy(
+            QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+        self.imageLabel.setScaledContents(True)
+
+        self.scrollArea = QScrollArea()
+        self.scrollArea.setBackgroundRole(QPalette.Dark)
+        self.scrollArea.setWidget(self.imageLabel)
+        self.scrollArea.setParent(self)
+        self.scrollArea.setGeometry(100, 150, 900, 600)
+
+        # self.scrollArea.setVisible(True)
+        # self.set(self.scrollArea)
+
+        # self.zoomInAct = QtWidgets.QAction("Zoom &In (25%)", self, shortcut="Ctrl++",
+        #                                    enabled=False, triggered=self.zoomIn)
+        self.createActions()
+        # self.createMenus()
+        self.chunksBox.currentIndexChanged.connect(self.changeChunk)
+        # self.changeChunk(chunks)
+        path = "D:/copy/1/dji_0021"
+        self.image = QtGui.QPixmap(path)
+        self.imageLabel.setPixmap(self.image)
+        # self.imageLabel.setGeometry(100, 150, 900, 600)
+        self.scaleFactor = 1.0
+
+        # self.printAct.setEnabled(True)
+        self.fitToWindowAct.setEnabled(True)
+        self.updateActions()
+
+        if not self.fitToWindowAct.isChecked():
+            self.imageLabel.adjustSize()
 
         self.btnZoomIn = QtWidgets.QPushButton("+")
         self.btnZoomIn.setFixedSize(23, 23)
@@ -180,20 +174,21 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         QtCore.QObject.connect(
             self.btnZoomOut, QtCore.SIGNAL("clicked()"),  zoomOut)
 
+        self.brightness.valueChanged.connect(self.changeBrightness)
         self.btnP1.setEnabled(False)
         self.exec()
 
-    def print_(self):
-        dialog = QPrintDialog(self.printer, self)
-        if dialog.exec_():
-            painter = QPainter(self.printer)
-            rect = painter.viewport()
-            size = self.imageLabel.pixmap().size()
-            size.scale(rect.size(), Qt.KeepAspectRatio)
-            painter.setViewport(rect.x(), rect.y(),
-                                size.width(), size.height())
-            painter.setWindow(self.imageLabel.pixmap().rect())
-            painter.drawPixmap(0, 0, self.imageLabel.pixmap())
+    # def print_(self):
+    #     dialog = QPrintDialog(self.printer, self)
+    #     if dialog.exec_():
+    #         painter = QPainter(self.printer)
+    #         rect = painter.viewport()
+    #         size = self.imageLabel.pixmap().size()
+    #         size.scale(rect.size(), Qt.KeepAspectRatio)
+    #         painter.setViewport(rect.x(), rect.y(),
+    #                             size.width(), size.height())
+    #         painter.setWindow(self.imageLabel.pixmap().rect())
+    #         painter.drawPixmap(0, 0, self.imageLabel.pixmap())
 
     def zoomIn(self):
         self.scaleImage(1.25)
@@ -206,8 +201,8 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.scaleFactor = 1.0
 
     def updateActions(self):
-        self.zoomInAct.setEnabled(not self.fitToWindowAct.isChecked())
-        self.zoomOutAct.setEnabled(not self.fitToWindowAct.isChecked())
+        # self.zoomInAct.setEnabled(not self.fitToWindowAct.isChecked())
+        # self.zoomOutAct.setEnabled(not self.fitToWindowAct.isChecked())
         self.normalSizeAct.setEnabled(not self.fitToWindowAct.isChecked())
 
     def scaleImage(self, factor):
@@ -243,11 +238,11 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         # self.exitAct = QAction("E&xit", self, shortcut="Ctrl+Q",
         #                        triggered=self.close)
 
-        self.zoomInAct = QtWidgets.QAction("Zoom &In (25%)", self, shortcut="Ctrl++",
-                                           enabled=False, triggered=self.zoomIn)
+        # self.zoomInAct = QtWidgets.QAction("Zoom &In (25%)", self, shortcut="Ctrl++",
+        #                                    enabled=False, triggered=self.zoomIn)
 
-        self.zoomOutAct = QAction("Zoom &Out (25%)", self, shortcut="Ctrl+-",
-                                  enabled=False, triggered=self.zoomOut)
+        # self.zoomOutAct = QAction("Zoom &Out (25%)", self, shortcut="Ctrl+-",
+        #                           enabled=False, triggered=self.zoomOut)
 
         self.normalSizeAct = QAction("&Normal Size", self, shortcut="Ctrl+S",
                                      enabled=False, triggered=self.normalSize)
@@ -259,6 +254,14 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
 
         # self.aboutQtAct = QAction("About &Qt", self,
         #                           triggered=QApplication.instance().aboutQt)
+
+    def changeBrightness(self, path):
+        image = Image.open(path)
+        exif = self.get_exif(image)
+        enhancer = ImageEnhance.Brightness(image)
+        path = path_dist + '/' + c.label + '.jpg'
+        self.image = enhancer.enhance(0.5)
+        # enhancer.enhance(0.5).save(path, exif=image.info["exif"])
 
     def selectFolder(self):
 
@@ -285,6 +288,17 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         return exif
 
     print('--------------------------------')
+
+    def createGridLayout(self):
+        self.groupBox = QtWidgets.QGroupBox('Params')
+        self.groupBox.setFont(QtGui.QFont(Sanserif, 13))
+        gridLayout = QtWidgets.QGridLayout()
+
+    def changeChunk(self, chunks):
+        chunk_key = self.chunksBox.currentData()
+        chunk = doc.findChunk(chunk_key)
+        print(chunk)
+        return chunk
 
     def copyChnukPhotos(self):
 
