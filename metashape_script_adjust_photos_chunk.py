@@ -1,3 +1,4 @@
+# v1.0.0
 import Metashape
 from PySide2 import QtGui, QtCore, QtWidgets, QtPrintSupport
 
