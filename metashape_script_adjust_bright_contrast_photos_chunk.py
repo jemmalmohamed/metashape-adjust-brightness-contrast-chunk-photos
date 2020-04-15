@@ -26,7 +26,7 @@ if found_major_version != compatible_major_version:
         found_major_version, compatible_major_version))
 
 
-class CopyChunkPhotosDlg(QtWidgets.QDialog):
+class AdjustChunkBrightContrastDlg(QtWidgets.QDialog):
     # path = ''
     # image = Image
 
@@ -34,7 +34,7 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
 
         QtWidgets.QDialog.__init__(self, parent)
         self.setWindowTitle(
-            "ADJUST PHOTOS BRIGHTNESS , CMG (MAROC)")
+            "ADJUST PHOTOS BRIGHTNESS - CONTRAST, CMG (MAROC)")
 
         # self.adjustSize()
         self.setMaximumHeight(880)
@@ -289,7 +289,8 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
             index = 0
         else:
             index = index + 1
-        self.getImage(index)
+        self.path_photo = self.paths[index]
+        self.getPixmapFromEnhance()
 
     def previousPhoto(self):
         index = self.paths.index(self.path_photo)
@@ -297,14 +298,15 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
             index = len(self.paths) - 1
         else:
             index = index - 1
-        self.getImage(index)
+        self.path_photo = self.paths[index]
+        self.getPixmapFromEnhance()
 
     def adjustImage(self, image):
         brghitness = self.brightness.value() / 100
         contrast = self.contrast.value() / 100
 
         imageEnhancer = ImageEnhance.Brightness(image)
-        imgBright = imageEnhancer.enhance(brghitprintness)
+        imgBright = imageEnhancer.enhance(brghitness)
 
         imageEnhancer = ImageEnhance.Contrast(imgBright)
         imgContrast = imageEnhancer.enhance(contrast)
@@ -313,7 +315,7 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
 
     def getPixmapFromEnhance(self):
 
-        image = Image.open(self.paths[0])
+        image = Image.open(self.path_photo)
 
         img = self.adjustImage(image)
 
@@ -335,7 +337,7 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         new_chunk.addPhotos(images)
 
     def adjustChunkPhotos(self):
-        print("Import Copy Photos Script started...")
+        print("Import Adjust Photos Script started...")
 
         imageList = []
         commun = os.path.commonpath(self.paths)
@@ -392,9 +394,9 @@ def adjustChunkPhotos():
     app = QtWidgets.QApplication.instance()
     parent = app.activeWindow()
 
-    dlg = CopyChunkPhotosDlg(parent)
+    dlg = AdjustChunkBrightContrastDlg(parent)
 
 
-label = "Custom menu/Adjust brightness Chunk"
+label = "Custom menu/Adjust brightness-contrast Chunk"
 Metashape.app.addMenuItem(label, adjustChunkPhotos)
 print("To execute this script press {}".format(label))
