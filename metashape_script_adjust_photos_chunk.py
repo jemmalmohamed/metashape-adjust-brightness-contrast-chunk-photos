@@ -71,9 +71,15 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.scrollArea.setMinimumWidth(830)
         self.scrollArea.setMaximumWidth(830)
 
-        path = "D:/copy/1/dji_0021"
-        self.image = QtGui.QPixmap(path)
-        self.imageLabel.setPixmap(self.image)
+        self.getChunk()
+
+        self.getPaths()
+
+        # path = "D:/copy/1/dji_0021"
+        # self.image = QtGui.QPixmap(self.path_photo)
+        # self.imageLabel.setPixmap(self.image)
+
+        self.getImage()
 
         self.scrollArea.setWidgetResizable(False)
         self.normalSize()
@@ -140,21 +146,21 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.chunksBox = QtWidgets.QComboBox()
         self.chunksBox.resize(200, 23)
 
-        chunks = self.getChunks()
-        for chunk in chunks:
+        self.getChunks()
+        for chunk in self.chunks:
             self.chunksBox.addItem(chunk.label, chunk.key)
 
         self.label_brightness = QtWidgets.QLabel('Image brightness (%): ')
         self.brightness = QtWidgets.QSpinBox()
         self.brightness.setMaximum(500)
-        self.brightness.setSingleStep(10)
+        self.brightness.setSingleStep(20)
         self.brightness.setMinimum(0)
         self.brightness.setValue(100)
 
         self.label_contrast = QtWidgets.QLabel('Image contrast (%): ')
         self.contrast = QtWidgets.QSpinBox()
         self.contrast.setMaximum(500)
-        self.contrast.setSingleStep(10)
+        self.contrast.setSingleStep(20)
         self.contrast.setMinimum(0)
         self.contrast.setValue(100)
 
@@ -186,12 +192,9 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         QtCore.QObject.connect(
             self.btn_select_folder, QtCore.SIGNAL("clicked()"), self.selectFolder)
 
-        # gridLayout.addWidget(self.btnZoomIn, 7, 1)
-        # gridLayout.addWidget(self.btnZoomOut, 7, 2)
-
-        # gridLayout.addWidget(self.btnP1, 8, 1)
-        # gridLayout.addWidget(self.btnQuit, 8, 2)
-
+        self.chunksBox.currentIndexChanged.connect(self.getChunk)
+        self.brightness.valueChanged.connect(self.adjustImage)
+        self.contrast.valueChanged.connect(self.adjustImage)
         self.groupBoxParams.setLayout(gridParamsLayout)
 
     def zoomIn(self):
@@ -214,9 +217,6 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.adjustScrollBar(self.scrollArea.horizontalScrollBar(), factor)
         self.adjustScrollBar(self.scrollArea.verticalScrollBar(), factor)
 
-        # self.zoomInAct.setEnabled(self.scaleFactor < 3.0)
-        # self.zoomOutAct.setEnabled(self.scaleFactor > 0.333)
-
     def adjustScrollBar(self, scrollBar, factor):
         scrollBar.setValue(int(factor * scrollBar.value()
                                + ((factor - 1) * scrollBar.pageStep()/2)))
@@ -228,7 +228,15 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
             self.normalSize()
 
     def getChunks(self):
-        return Metashape.app.document.chunks
+        self.chunks = Metashape.app.document.chunks
+        if len(self.chunks) == 0:
+            Metashape.app.messageBox('No chunk in project')
+
+    def getChunk(self):
+        chunk_key = self.chunksBox.currentData()
+        self.chunk = doc.findChunk(chunk_key)
+        self.getPaths()
+        self.getImage()
 
     def selectFolder(self):
 
@@ -239,6 +247,63 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         self.path_label.setText(path)
         self.btnSubmit.setEnabled(True)
         self.path_folder = directoryPath
+
+    def getPaths(self):
+        self.paths = []
+        for c in self.chunk.cameras:
+            path = c.photo.path
+            self.paths.append(path)
+        if len(self.paths) == 0:
+            Metashape.app.messageBox('No photos in this chunk')
+
+    def getImage(self):
+        self.path_photo = self.paths[0]
+        self.image = QtGui.QPixmap(self.path_photo)
+
+        self.imageLabel.setPixmap(self.image)
+
+    def nextPhoto(self, index):
+        self.path_photo = self.paths[index + 1]
+        if index == len(self.paths) + 1:
+            self.path_photo = path[0]
+
+    def previousPhoto(self, index):
+        self.path_photo = self.paths[index - 1]
+        if index == 0:
+            self.path_photo = path[len(self.paths) - 1]
+
+    def adjustImage(self):
+
+        image = Image.open(self.paths[0])
+        brghitness = self.brightness.value() / 100
+        contrast = self.contrast.value() / 100
+
+        imageEnhancer = ImageEnhance.Brightness(image)
+        imgBright = imageEnhancer.enhance(brghitness)
+
+        imageEnhancer = ImageEnhance.Contrast(imgBright)
+        imgContrast = imageEnhancer.enhance(contrast)
+
+        self.image = imgContrast.toqimage()
+        self.image = QtGui.QPixmap(self.image)
+        self.imageLabel.setPixmap(self.image)
+
+    def changeContrasr(self):
+
+        image = Image.open(self.paths[0])
+        exif = self.get_exif(image)
+        enhancer = ImageEnhance.Contrast(image)
+        contrast = self.contrast.value() / 100
+        img = enhancer.enhance(constrast)
+        self.image = img.toqimage()
+        self.image = QtGui.QPixmap(self.image)
+        self.imageLabel.setPixmap(self.image)
+
+    def get_exif(self, image):
+
+        exif = image._getexif()
+
+        return exif
 
 
 def copyChnukPhotos():
