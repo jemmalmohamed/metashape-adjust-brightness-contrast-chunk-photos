@@ -40,11 +40,13 @@ class AdjustChunkBrightContrastDlg(QtWidgets.QDialog):
         self.setMaximumHeight(880)
         self.createParamsGridLayout()
         self.createButtonsGridLayout()
+        self.createProgressBar()
         self.createImageViewerLayout()
 
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(self.groupBoxParams)
         vbox.addWidget(self.groupBoxViewer)
+        vbox.addWidget(self.groupBoxProgressBar)
         vbox.addWidget(self.groupBoxButtons)
 
         self.setLayout(vbox)
@@ -123,8 +125,6 @@ class AdjustChunkBrightContrastDlg(QtWidgets.QDialog):
         QtCore.QObject.connect(
             self.btnPreviousPhoto, QtCore.SIGNAL("clicked()"),  self.previousPhoto)
 
-        # self.btnNextPhoto.clicked.connect(lambda: self.nextPhoto())
-        # self.btnFit.clicked.connect(lambda: self.fitToWindow(True))
         self.groupBoxViewerBtn.setLayout(gridViewerBtnLayout)
 
     def createButtonsGridLayout(self):
@@ -211,6 +211,17 @@ class AdjustChunkBrightContrastDlg(QtWidgets.QDialog):
         self.brightness.valueChanged.connect(self.getPixmapFromEnhance)
         self.contrast.valueChanged.connect(self.getPixmapFromEnhance)
         self.groupBoxParams.setLayout(gridParamsLayout)
+
+    def createProgressBar(self):
+        self.groupBoxProgressBar = QtWidgets.QGroupBox()
+        gridProgressBar = QtWidgets.QGridLayout()
+
+        self.progressBar = QtWidgets.QProgressBar()
+        self.progressBar.setMinimum(0)
+        self.progressBar.setMaximum(100)
+
+        gridProgressBar.addWidget(self.progressBar, 0, 0)
+        self.groupBoxProgressBar.setLayout(gridProgressBar)
 
     def zoomIn(self):
 
@@ -336,50 +347,91 @@ class AdjustChunkBrightContrastDlg(QtWidgets.QDialog):
         new_chunk.label = 'Adjusted ' + self.chunk.label
         new_chunk.addPhotos(images)
 
+    def copyPhots(self, c):
+
+        source = c.photo.path
+        destination = self.path_folder
+
+        path_without_drive = os.path.splitdrive(source)[1]
+        subfolder = os.path.splitext(path_without_drive)[0]
+        path_to_photo = os.path.split(path_without_drive)[0]
+
+        folders = path_to_photo.split('/')
+        path_dist = destination + path_to_photo
+
+        path_dist = path_dist.replace(self.commun_without_drive, '')
+
+        try:
+            if not os.path.exists(path_dist):
+                os.makedirs(path_dist)
+
+            image = Image.open(source)
+            exif = self.get_exif(image)
+
+            enhancer = self.adjustImage(image)
+
+            path = path_dist + '/' + c.label + '.jpg'
+            enhancer.save(
+                path, exif=image.info["exif"])
+
+            self.imageList.append(path)
+            image.close()
+
+        except RuntimeError:
+            Metashape.app.messageBox('error')
+
     def adjustChunkPhotos(self):
         print("Import Adjust Photos Script started...")
 
-        imageList = []
+        self.imageList = []
         commun = os.path.commonpath(self.paths)
         commun_without_drive = os.path.splitdrive(commun)[1]
-        commun_without_drive = commun_without_drive.replace('\\', '/')
-
+        self.commun_without_drive = commun_without_drive.replace('\\', '/')
+        total = len(self.chunk.cameras)
+        self.progressBar.setMaximum(total)
+        i = 0
         for c in self.chunk.cameras:
-            source = c.photo.path
-            destination = self.path_folder
 
-            path_without_drive = os.path.splitdrive(source)[1]
-            subfolder = os.path.splitext(path_without_drive)[0]
-            path_to_photo = os.path.split(path_without_drive)[0]
+            self.copyPhots(c)
 
-            folders = path_to_photo.split('/')
-            path_dist = destination + path_to_photo
+            # i = i + 1
+            # self.progressBar.setValue(i)
 
-            path_dist = path_dist.replace(commun_without_drive, '')
+            # source = c.photo.path
+            # destination = self.path_folder
 
-            try:
-                if not os.path.exists(path_dist):
-                    os.makedirs(path_dist)
+            # path_without_drive = os.path.splitdrive(source)[1]
+            # subfolder = os.path.splitext(path_without_drive)[0]
+            # path_to_photo = os.path.split(path_without_drive)[0]
 
-                image = Image.open(source)
-                exif = self.get_exif(image)
+            # folders = path_to_photo.split('/')
+            # path_dist = destination + path_to_photo
 
-                enhancer = self.adjustImage(image)
+            # path_dist = path_dist.replace(commun_without_drive, '')
 
-                path = path_dist + '/' + c.label + '.jpg'
-                enhancer.save(
-                    path, exif=image.info["exif"])
+            # try:
+            #     if not os.path.exists(path_dist):
+            #         os.makedirs(path_dist)
 
-                imageList.append(path)
-                image.close()
+            #     image = Image.open(source)
+            #     exif = self.get_exif(image)
 
-                # shutil.copy2(source, path_dist)
-            except RuntimeError:
-                Metashape.app.messageBox('error')
+            #     enhancer = self.adjustImage(image)
+
+            #     path = path_dist + '/' + c.label + '.jpg'
+            #     enhancer.save(
+            #         path, exif=image.info["exif"])
+
+            #     imageList.append(path)
+            #     image.close()
+
+            #     # shutil.copy2(source, path_dist)
+            # except RuntimeError:
+            #     Metashape.app.messageBox('error')
 
         if self.chkCreateChunk.isChecked():
 
-            self.add_new_chunk(imageList)
+            self.add_new_chunk(self.imageList)
         self.close()
         print("Script finished!")
         # Metashape.app.messageBox('Adjusting and Copy  successful !')
