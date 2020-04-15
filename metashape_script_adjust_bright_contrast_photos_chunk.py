@@ -13,7 +13,7 @@ from PySide2.QtPrintSupport import QPrintDialog, QPrinter
 import datetime
 import shapefile
 import os
-import shutil
+import concurrent.futures
 
 from PIL import Image, ImageEnhance
 from PIL.ExifTags import TAGS
@@ -348,7 +348,8 @@ class AdjustChunkBrightContrastDlg(QtWidgets.QDialog):
         new_chunk.addPhotos(images)
 
     def copyPhots(self, c):
-
+        self.i = self.i + 1
+        self.progressBar.setValue(self.i)
         source = c.photo.path
         destination = self.path_folder
 
@@ -389,45 +390,15 @@ class AdjustChunkBrightContrastDlg(QtWidgets.QDialog):
         self.commun_without_drive = commun_without_drive.replace('\\', '/')
         total = len(self.chunk.cameras)
         self.progressBar.setMaximum(total)
-        i = 0
+        self.i = 0
+
+        # with concurrent.futures.ThreadPoolExecutor() as executor:
+        #     executor.map(self.copyPhots, self.chunk.cameras)
+
         for c in self.chunk.cameras:
 
             self.copyPhots(c)
-
-            # i = i + 1
-            # self.progressBar.setValue(i)
-
-            # source = c.photo.path
-            # destination = self.path_folder
-
-            # path_without_drive = os.path.splitdrive(source)[1]
-            # subfolder = os.path.splitext(path_without_drive)[0]
-            # path_to_photo = os.path.split(path_without_drive)[0]
-
-            # folders = path_to_photo.split('/')
-            # path_dist = destination + path_to_photo
-
-            # path_dist = path_dist.replace(commun_without_drive, '')
-
-            # try:
-            #     if not os.path.exists(path_dist):
-            #         os.makedirs(path_dist)
-
-            #     image = Image.open(source)
-            #     exif = self.get_exif(image)
-
-            #     enhancer = self.adjustImage(image)
-
-            #     path = path_dist + '/' + c.label + '.jpg'
-            #     enhancer.save(
-            #         path, exif=image.info["exif"])
-
-            #     imageList.append(path)
-            #     image.close()
-
-            #     # shutil.copy2(source, path_dist)
-            # except RuntimeError:
-            #     Metashape.app.messageBox('error')
+            QtWidgets.QApplication.processEvents()
 
         if self.chkCreateChunk.isChecked():
 
