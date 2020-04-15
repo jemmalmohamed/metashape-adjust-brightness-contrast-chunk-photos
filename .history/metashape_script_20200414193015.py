@@ -1,0 +1,25 @@
+import Metashape
+from PySide2 import QtGui, QtCore, QtWidgets, QtPrintSupport
+
+
+from PySide2.QtCore import QDir, Qt
+from PySide2.QtGui import QImage, QPainter, QPalette, QPixmap
+from PySide2.QtWidgets import (QAction, QApplication, QFileDialog, QLabel,
+                               QMainWindow, QMenu, QMessageBox, QScrollArea, QSizePolicy)
+from PySide2.QtPrintSupport import QPrintDialog, QPrinter
+
+
+import datetime
+import shapefile
+import os
+import shutil
+
+from PIL import Image, ImageEnhance
+from PIL.ExifTags import TAGS
+from PIL.ExifTags import GPSTAGS
+# Checking compatibility
+compatible_major_version = "1.6"
+found_major_version = ".".join(Metashape.app.version.split('.')[:2])
+if found_major_version != compatible_major_version:
+    raise Exception("Incompatible Metashape version: {} != {}".format(
+        found_major_version, compatible_major_version))

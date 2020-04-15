@@ -1,0 +1,171 @@
+import Metashape
+from PySide2 import QtGui, QtCore, QtWidgets
+
+import datetime
+import shapefile
+import os
+import shutil
+
+
+# Checking compatibility
+compatible_major_version = "1.6"
+found_major_version = ".".join(Metashape.app.version.split('.')[:2])
+if found_major_version != compatible_major_version:
+    raise Exception("Incompatible Metashape version: {} != {}".format(
+        found_major_version, compatible_major_version))
+
+
+class CopyChunkPhotosDlg(QtWidgets.QDialog):
+    path = ''
+    def __init__(self, parent):
+
+        QtWidgets.QDialog.__init__(self, parent)
+
+        self.setWindowTitle(
+            "COPY CHUNK PHOTOS , CMG (MAROC)")
+        self.resize(250, 150)
+        self.label_chunk = QtWidgets.QLabel('Chunk : ')
+        self.label_chunk.resize(100, 23)
+
+        self.label_number_photos = QtWidgets.QLabel('Total Photos : ')
+        self.number_photos = QtWidgets.QLabel('----')
+
+        self.label_folder = QtWidgets.QLabel('Select folder  : ')
+        self.label_folder.resize(200, 23)
+        self.chunksBox = QtWidgets.QComboBox()
+        self.chunksBox.resize(200, 23)
+
+        self.path_label = QtWidgets.QLabel('Path :')
+
+        doc = Metashape.app.document
+        chunks = doc.chunks
+
+        for chunk in chunks:
+            self.chunksBox.addItem(chunk.label, chunk.key)
+
+        self.btnAdd = QtWidgets.QPushButton("Select...")
+        self.btnAdd.setFixedSize(150, 23)
+
+        self.btnQuit = QtWidgets.QPushButton("Cancel")
+        self.btnQuit.setFixedSize(150, 23)
+
+        self.btnP1 = QtWidgets.QPushButton("OK")
+        self.btnP1.setFixedSize(150, 23)
+
+        layout = QtWidgets.QGridLayout()  # creating layout
+
+        layout.addWidget(self.label_chunk, 1, 1)
+        layout.addWidget(self.chunksBox, 1, 2)
+
+        # layout.addWidget(self.label_number_photos, 2, 1)
+        # layout.addWidget(self.number_photos, 2, 2)
+
+        layout.addWidget(self.label_folder, 3, 1)
+        layout.addWidget(self.btnAdd, 3, 2)
+
+        layout.addWidget(self.path_label, 4, 1)
+
+        layout.addWidget(self.btnP1, 5, 1)
+        layout.addWidget(self.btnQuit, 5, 2)
+
+        self.setLayout(layout)
+
+        def proc_copy(): return self.copyChnukPhotos()
+        def selectFolder(): return self.selectFolder()
+
+        QtCore.QObject.connect(
+            self.btnAdd, QtCore.SIGNAL("clicked()"), selectFolder)
+        QtCore.QObject.connect(
+            self.btnP1, QtCore.SIGNAL("clicked()"), proc_copy)
+
+        QtCore.QObject.connect(self.btnQuit, QtCore.SIGNAL(
+            "clicked()"), self, QtCore.SLOT("reject()"))
+
+        self.exec()
+
+    def selectFolder(self):
+
+        directoryPath = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Select Directory")
+        dossier = directoryPath.split('/')[-1]
+        path = 'path : {}'.format(directoryPath)
+        self.path_label.setText(path)
+        self.path = directoryPath
+
+        # for (root, dirs, files) in os.walk(directoryPath):
+
+        #     for file in files:
+        #         extension = os.path.splitext(file)[1].lower()
+        #         if(extension == '.jpg'):
+        #             path_photo = root + '/' + file
+        #             self.pathPhotos.append(path_photo)
+
+    def add_new_chunk(self, images):
+        doc = Metashape.app.document
+        new_chunk = doc.addChunk()
+        new_chunk.addPhotos(images)
+        return new_chunk
+
+    def check_path(self, chunk):
+        folders_to_ignore = []
+        for c in chunk.cameras:
+            source = c.photo.path
+            path_without_drive = os.path.splitdrive(source)[1]
+            subfolder = os.path.splitext(path_without_drive)[0]
+            path_to_photo = os.path.split(path_without_drive)[0]
+
+            folders = path_to_photo.split('/')
+            print(folders)
+
+    def copyChnukPhotos(self):
+        chunk_key = 0
+        print("Import Copy Photos Script started...")
+        doc = Metashape.app.document
+        chunks = doc.chunks
+
+        chunk_key = self.chunksBox.currentData()
+        chunk = doc.findChunk(chunk_key)
+
+        fold = self.check_path(chunk)
+        print(fold)
+        # for c in chunk.cameras:
+
+        #     source = c.photo.path
+        #     destination = self.path
+
+        #     path_without_drive = os.path.splitdrive(source)[1]
+        #     subfolder = os.path.splitext(path_without_drive)[0]
+        #     path_to_photo = os.path.split(path_without_drive)[0]
+
+        #     folders = path_to_photo.split('/')
+        #     print(folders)
+
+        #     path_dist = destination + path_to_photo
+        #     print(source)
+        #     print(path_dist)
+        #     print('----------------------------------------------------------------')
+
+        #     if not os.path.exists(path_dist):
+        #         os.makedirs(path_dist)
+
+        #     shutil.copy2(source, path_dist)
+
+        print("Script finished!")
+        # self.close()
+        return True
+
+
+def copyChnukPhotos():
+    global doc
+
+    doc = Metashape.app.document
+
+    app = QtWidgets.QApplication.instance()
+    parent = app.activeWindow()
+
+    dlg = CopyChunkPhotosDlg(parent)
+
+
+label = "Custom menu/Copy Chunk photos"
+Metashape.app.addMenuItem(label, copyChnukPhotos)
+print("To execute this script press {}".format(label))
