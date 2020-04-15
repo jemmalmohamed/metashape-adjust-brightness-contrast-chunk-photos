@@ -76,11 +76,7 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
 
         self.getPaths()
 
-        # path = "D:/copy/1/dji_0021"
-        # self.image = QtGui.QPixmap(self.path_photo)
-        # self.imageLabel.setPixmap(self.image)
-
-        self.getImage()
+        self.getImage(0)
 
         self.scrollArea.setWidgetResizable(False)
         self.normalSize()
@@ -96,24 +92,38 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
 
         gridViewerBtnLayout = QtWidgets.QGridLayout()
 
+        self.btnNextPhoto = QtWidgets.QPushButton("->")
+        self.btnNextPhoto.setFixedSize(23, 23)
+
+        self.btnPreviousPhoto = QtWidgets.QPushButton("<-")
+        self.btnPreviousPhoto.setFixedSize(23, 23)
+
         self.btnZoomIn = QtWidgets.QPushButton("+")
         self.btnZoomIn.setFixedSize(23, 23)
 
         self.btnZoomOut = QtWidgets.QPushButton("-")
         self.btnZoomOut.setFixedSize(23, 23)
 
-        self.btnZoomOut = QtWidgets.QPushButton("-")
-        self.btnZoomOut.setFixedSize(23, 23)
+        # self.btnZoomOut = QtWidgets.QPushButton("-")
+        # self.btnZoomOut.setFixedSize(23, 23)
 
         gridViewerBtnLayout.addWidget(self.btnZoomIn, 0, 0)
         gridViewerBtnLayout.addWidget(self.btnZoomOut, 0, 1)
+
+        gridViewerBtnLayout.addWidget(self.btnPreviousPhoto, 0, 3)
+        gridViewerBtnLayout.addWidget(self.btnNextPhoto, 0, 4)
 
         QtCore.QObject.connect(
             self.btnZoomIn, QtCore.SIGNAL("clicked()"),  self.zoomIn)
 
         QtCore.QObject.connect(
             self.btnZoomOut, QtCore.SIGNAL("clicked()"),  self.zoomOut)
+        QtCore.QObject.connect(
+            self.btnNextPhoto, QtCore.SIGNAL("clicked()"),  self.nextPhoto)
+        QtCore.QObject.connect(
+            self.btnPreviousPhoto, QtCore.SIGNAL("clicked()"),  self.previousPhoto)
 
+        # self.btnNextPhoto.clicked.connect(lambda: self.nextPhoto())
         # self.btnFit.clicked.connect(lambda: self.fitToWindow(True))
         self.groupBoxViewerBtn.setLayout(gridViewerBtnLayout)
 
@@ -241,9 +251,10 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
     def getChunk(self):
         chunk_key = self.chunksBox.currentData()
         self.chunk = doc.findChunk(chunk_key)
-
+        self.brightness.setValue(100)
+        self.contrast.setValue(100)
         self.getPaths()
-        self.getImage()
+        self.getImage(0)
 
     def selectFolder(self):
 
@@ -264,29 +275,36 @@ class CopyChunkPhotosDlg(QtWidgets.QDialog):
         if len(self.paths) == 0:
             Metashape.app.messageBox('No photos in this chunk')
 
-    def getImage(self):
-        self.path_photo = self.paths[0]
+    def getImage(self, index):
+        self.path_photo = self.paths[index]
 
         self.image = QtGui.QPixmap(self.path_photo)
 
         self.imageLabel.setPixmap(self.image)
 
-    def nextPhoto(self, index):
-        self.path_photo = self.paths[index + 1]
-        if index == len(self.paths) + 1:
-            self.path_photo = path[0]
+    def nextPhoto(self):
 
-    def previousPhoto(self, index):
-        self.path_photo = self.paths[index - 1]
+        index = self.paths.index(self.path_photo)
+        if index == len(self.paths) - 1:
+            index = 0
+        else:
+            index = index + 1
+        self.getImage(index)
+
+    def previousPhoto(self):
+        index = self.paths.index(self.path_photo)
         if index == 0:
-            self.path_photo = path[len(self.paths) - 1]
+            index = len(self.paths) - 1
+        else:
+            index = index - 1
+        self.getImage(index)
 
     def adjustImage(self, image):
         brghitness = self.brightness.value() / 100
         contrast = self.contrast.value() / 100
 
         imageEnhancer = ImageEnhance.Brightness(image)
-        imgBright = imageEnhancer.enhance(brghitness)
+        imgBright = imageEnhancer.enhance(brghitprintness)
 
         imageEnhancer = ImageEnhance.Contrast(imgBright)
         imgContrast = imageEnhancer.enhance(contrast)
